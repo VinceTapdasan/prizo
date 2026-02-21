@@ -1,19 +1,17 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Lora } from "next/font/google";
+import { Inter, Space_Mono } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
+import { QueryProvider } from "@/providers/query-provider";
 import "./globals.css";
 
-const geist = Geist({
+const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
 });
 
-const lora = Lora({
+const spaceMono = Space_Mono({
   subsets: ["latin"],
-  variable: "--font-heading",
-});
-
-const geistMono = Geist_Mono({
-  subsets: ["latin"],
+  weight: ["400", "700"],
   variable: "--font-mono",
 });
 
@@ -29,8 +27,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geist.variable} ${lora.variable} ${geistMono.variable} font-sans antialiased`}>
-        {children}
+      <body className={`${inter.variable} ${spaceMono.variable} font-sans antialiased`}>
+        <ThemeProvider>
+          <QueryProvider>{children}</QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
