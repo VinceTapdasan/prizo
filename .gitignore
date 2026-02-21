@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+.mcp.json
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+dist/
+build/
+.next/
+*.log
+coverage/
+.cache/
