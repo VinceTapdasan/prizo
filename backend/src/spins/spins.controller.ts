@@ -3,16 +3,14 @@ import {
   Get,
   Post,
   Param,
-  UseGuards,
-  Req,
-  ForbiddenException,
+  Body,
+  Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { SpinsService } from './spins.service';
 import { CustomersService } from '../customers/customers.service';
-import { SupabaseAuthGuard } from '../auth/auth.guard';
 
 @Controller('businesses/:businessId')
-@UseGuards(SupabaseAuthGuard)
 export class SpinsController {
   constructor(
     private readonly spins: SpinsService,
@@ -20,16 +18,22 @@ export class SpinsController {
   ) {}
 
   @Get('spin-status')
-  async getSpinStatus(@Param('businessId') businessId: string, @Req() req: any) {
-    if (!req.user.phone) throw new ForbiddenException('Customer phone auth required');
-    const customer = await this.customers.findOrCreateByPhone(req.user.phone, req.user.id);
+  async getSpinStatus(
+    @Param('businessId') businessId: string,
+    @Query('phone') phone: string,
+  ) {
+    if (!phone) throw new BadRequestException('phone is required');
+    const customer = await this.customers.findOrCreateByPhone(phone);
     return this.spins.getSpinStatus(businessId, customer.id);
   }
 
   @Post('spin')
-  async executeSpin(@Param('businessId') businessId: string, @Req() req: any) {
-    if (!req.user.phone) throw new ForbiddenException('Customer phone auth required');
-    const customer = await this.customers.findOrCreateByPhone(req.user.phone, req.user.id);
+  async executeSpin(
+    @Param('businessId') businessId: string,
+    @Body() body: { phone: string },
+  ) {
+    if (!body?.phone) throw new BadRequestException('phone is required');
+    const customer = await this.customers.findOrCreateByPhone(body.phone);
     return this.spins.executeSpin(businessId, customer.id);
   }
 }

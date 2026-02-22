@@ -1,12 +1,16 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, count } from 'drizzle-orm';
 import { DrizzleService } from '../db/drizzle.service';
 import * as schema from '../db/schema';
 import type { Reward } from '../db/schema';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 
 @Injectable()
 export class SpinsService {
-  constructor(private readonly drizzle: DrizzleService) {}
+  constructor(
+    private readonly drizzle: DrizzleService,
+    private readonly activityLogs: ActivityLogsService,
+  ) {}
 
   async getSpinStatus(businessId: string, customerId: string) {
     const [business] = await this.drizzle.db
@@ -47,7 +51,20 @@ export class SpinsService {
   }
 
   async executeSpin(businessId: string, customerId: string) {
-    return await this.drizzle.db.transaction(async (tx) => {
+    // Check if this is the customer's first visit (before transaction creates the record)
+    const [existingCb] = await this.drizzle.db
+      .select({ id: schema.customerBusiness.id })
+      .from(schema.customerBusiness)
+      .where(
+        and(
+          eq(schema.customerBusiness.customerId, customerId),
+          eq(schema.customerBusiness.businessId, businessId),
+        ),
+      )
+      .limit(1);
+    const isFirstVisit = !existingCb;
+
+    const result = await this.drizzle.db.transaction(async (tx) => {
       // 1. Get business config
       const [business] = await tx
         .select()
@@ -113,20 +130,24 @@ export class SpinsService {
         .returning();
 
       // 7. Create customer_reward if won
+      let customerRewardId: string | null = null;
+      let customerRewardExpiresAt: string | null = null;
       if (wonReward) {
-        const expiresInDays = wonReward.expiresInDays ?? 365;
+        const expiresInDays = wonReward.expiresInDays ?? 1;
         const expiresAt = new Date(
           Date.now() + expiresInDays * 24 * 60 * 60 * 1000,
         ).toISOString();
 
-        await tx.insert(schema.customerRewards).values({
+        const [cr] = await tx.insert(schema.customerRewards).values({
           customerId,
           businessId,
           rewardId: wonReward.id,
           spinId: spin.id,
           status: 'unclaimed',
           expiresAt,
-        });
+        }).returning();
+        customerRewardId = cr.id;
+        customerRewardExpiresAt = expiresAt;
       }
 
       // 8. Update customer_business — reset pity on win, increment on miss
@@ -156,12 +177,29 @@ export class SpinsService {
               tier: wonReward.tier,
             }
           : null,
+        customer_reward_id: customerRewardId,
+        expires_at: customerRewardExpiresAt,
         pity_triggered: pityTriggered,
         points_earned: business.pointsPerScan,
         total_points: cb.loyaltyPoints + business.pointsPerScan,
         pity_counter: newPityCounter,
       };
     });
+
+    // Log asynchronously — don't block the spin response
+    this.activityLogs.logSpin(businessId, customerId, {
+      won: result.won,
+      tier: result.reward?.tier ?? null,
+      reward_name: result.reward?.name ?? null,
+      pity_triggered: result.pity_triggered,
+      points_earned: result.points_earned,
+      total_points: result.total_points,
+      is_first_visit: isFirstVisit,
+    }).catch(() => {
+      // Non-fatal — log failure should not break the spin
+    });
+
+    return result;
   }
 
   private isSpinAvailable(lastSpinAt: string | null, resetTime: string): boolean {
