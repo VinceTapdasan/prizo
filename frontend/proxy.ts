@@ -29,41 +29,57 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Unauthenticated → login
-  if (!user && (pathname.startsWith('/dashboard') || pathname === '/onboarding')) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  // Unauthenticated → protect dashboard, onboarding, link-phone
+  if (!user) {
+    if (
+      pathname.startsWith('/dashboard') ||
+      pathname === '/onboarding' ||
+      pathname === '/link-phone'
+    ) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+    return response;
   }
 
-  // Already authed → skip login page
-  if (user && pathname === '/login') {
+  // Authenticated — do the business check once
+  const { data: businesses } = await supabase
+    .from('businesses')
+    .select('id')
+    .eq('owner_id', user.id)
+    .limit(1);
+
+  const hasVenue = !!(businesses && businesses.length > 0);
+
+  // Already has phone linked → skip link-phone page
+  if (pathname === '/link-phone' && user.phone) {
+    return NextResponse.redirect(new URL(hasVenue ? '/dashboard' : '/onboarding', request.url));
+  }
+
+  // Already authed → redirect away from login
+  if (pathname === '/login') {
+    if (hasVenue) return NextResponse.redirect(new URL('/dashboard', request.url));
+    // Phone user with no business → customer rewards
+    if (user.phone) return NextResponse.redirect(new URL('/my-venues', request.url));
+    // Google user with no business or phone → link phone first
+    if (!user.phone) return NextResponse.redirect(new URL('/link-phone', request.url));
+    return NextResponse.redirect(new URL('/onboarding', request.url));
+  }
+
+  // Root "/" → send to right place
+  if (pathname === '/') {
+    if (hasVenue) return NextResponse.redirect(new URL('/dashboard', request.url));
+    if (user.phone) return NextResponse.redirect(new URL('/my-venues', request.url));
+    return NextResponse.redirect(new URL('/onboarding', request.url));
+  }
+
+  // No venue → must complete onboarding first
+  if (!hasVenue && pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/onboarding', request.url));
+  }
+
+  // Already has venue → skip onboarding
+  if (hasVenue && pathname === '/onboarding') {
     return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
-  if (user) {
-    const { data: businesses } = await supabase
-      .from('businesses')
-      .select('id')
-      .eq('owner_id', user.id)
-      .limit(1);
-
-    const hasVenue = businesses && businesses.length > 0;
-
-    // Root "/" → send authenticated users to the right place
-    if (pathname === '/') {
-      return NextResponse.redirect(
-        new URL(hasVenue ? '/dashboard' : '/onboarding', request.url),
-      );
-    }
-
-    // No venue → must complete onboarding first
-    if (!hasVenue && pathname.startsWith('/dashboard')) {
-      return NextResponse.redirect(new URL('/onboarding', request.url));
-    }
-
-    // Already has venue → skip onboarding
-    if (hasVenue && pathname === '/onboarding') {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
   }
 
   return response;

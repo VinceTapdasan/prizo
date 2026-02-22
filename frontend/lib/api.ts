@@ -49,9 +49,37 @@ export const api = {
     deactivate: (id: string) => apiFetch(`/rewards/${id}`, { method: 'DELETE' }),
   },
   spins: {
-    getStatus: (businessId: string) =>
-      apiFetch(`/businesses/${businessId}/spin-status`),
-    execute: (businessId: string) =>
-      apiFetch(`/businesses/${businessId}/spin`, { method: 'POST' }),
+    getStatus: (businessId: string, phone: string) =>
+      apiFetch(`/businesses/${businessId}/spin-status?phone=${encodeURIComponent(phone)}`),
+    execute: (businessId: string, phone: string) =>
+      apiFetch(`/businesses/${businessId}/spin`, { method: 'POST', body: JSON.stringify({ phone }) }),
+  },
+  customers: {
+    checkPhone: (phone: string) =>
+      apiFetch<{ exists: boolean; has_password: boolean }>(
+        `/customers/check?phone=${encodeURIComponent(phone)}`,
+      ),
+    setPasswordFlag: () => apiFetch('/customers/me/set-password-flag', { method: 'POST' }),
+    getVenues: () => apiFetch('/customers/me/venues'),
+    getAllRewards: () => apiFetch('/customers/me/rewards'),
+    getRewardsForBusiness: (businessId: string, phone: string) =>
+      apiFetch(
+        `/businesses/${businessId}/customer-rewards?phone=${encodeURIComponent(phone)}`,
+      ),
+    getForBusiness: (businessId: string) =>
+      apiFetch(`/businesses/${businessId}/customers`),
+    redeemReward: (id: string) =>
+      apiFetch(`/customer-rewards/${id}/redeem`, { method: 'POST' }),
+  },
+  admin: {
+    getBusinesses: () => apiFetch('/admin/businesses'),
+    getActivityLogs: (limit?: number) =>
+      apiFetch(`/admin/activity-logs${limit ? `?limit=${limit}` : ''}`),
+    getFrequency: (businessId: string) =>
+      apiFetch(`/admin/businesses/${businessId}/frequency`),
+  },
+  analytics: {
+    getOverview: (businessId: string) =>
+      apiFetch(`/businesses/${businessId}/analytics`),
   },
 };

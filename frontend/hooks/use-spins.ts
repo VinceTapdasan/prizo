@@ -12,21 +12,21 @@ export function useBusinessBySlug(slug: string) {
   });
 }
 
-export function useSpinStatus(businessId: string | undefined) {
+export function useSpinStatus(businessId: string | undefined, phone: string | undefined) {
   return useQuery<SpinStatus>({
-    queryKey: ['spin-status', businessId],
-    queryFn: () => api.spins.getStatus(businessId!) as Promise<SpinStatus>,
-    enabled: !!businessId,
+    queryKey: ['spin-status', businessId, phone],
+    queryFn: () => api.spins.getStatus(businessId!, phone!) as Promise<SpinStatus>,
+    enabled: !!businessId && !!phone,
     refetchOnWindowFocus: false,
   });
 }
 
-export function useExecuteSpin(businessId: string | undefined) {
+export function useExecuteSpin(businessId: string | undefined, phone: string | undefined) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api.spins.execute(businessId!) as Promise<SpinResult>,
+    mutationFn: () => api.spins.execute(businessId!, phone!) as Promise<SpinResult>,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['spin-status', businessId] });
+      qc.invalidateQueries({ queryKey: ['spin-status', businessId, phone] });
     },
   });
 }
