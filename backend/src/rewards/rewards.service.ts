@@ -56,10 +56,14 @@ export class RewardsService {
       .set({
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.description !== undefined && { description: dto.description }),
-        ...(dto.probability !== undefined && { probability: String(dto.probability) }),
+        ...(dto.probability !== undefined && {
+          probability: String(dto.probability),
+        }),
         ...(dto.stock !== undefined && { stock: dto.stock }),
         ...(dto.is_active !== undefined && { isActive: dto.is_active }),
-        ...(dto.expires_in_days !== undefined && { expiresInDays: dto.expires_in_days }),
+        ...(dto.expires_in_days !== undefined && {
+          expiresInDays: dto.expires_in_days,
+        }),
       })
       .where(eq(schema.rewards.id, id))
       .returning();

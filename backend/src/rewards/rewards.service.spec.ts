@@ -42,15 +42,24 @@ describe('RewardsService', () => {
       setDb({ insertReturning: [[fixtures.reward]] });
       const insertSpy = jest.spyOn(mockDrizzle.db, 'insert');
 
-      await service.create('biz-1', { name: 'Free Coffee', tier: 'common', probability: 25.5 });
+      await service.create('biz-1', {
+        name: 'Free Coffee',
+        tier: 'common',
+        probability: 25.5,
+      });
 
-      const valuesCall = (insertSpy.mock.results[0].value.values as jest.Mock).mock.calls[0][0];
+      const valuesCall = (insertSpy.mock.results[0].value.values as jest.Mock)
+        .mock.calls[0][0];
       expect(typeof valuesCall.probability).toBe('string');
       expect(valuesCall.probability).toBe('25.5');
     });
 
     it('passes optional fields (stock, expires_in_days, description)', async () => {
-      setDb({ insertReturning: [[{ ...fixtures.reward, stock: 10, expiresInDays: 30 }]] });
+      setDb({
+        insertReturning: [
+          [{ ...fixtures.reward, stock: 10, expiresInDays: 30 }],
+        ],
+      });
       const insertSpy = jest.spyOn(mockDrizzle.db, 'insert');
 
       await service.create('biz-1', {
@@ -62,7 +71,8 @@ describe('RewardsService', () => {
         description: 'A delicious coffee',
       });
 
-      const valuesCall = (insertSpy.mock.results[0].value.values as jest.Mock).mock.calls[0][0];
+      const valuesCall = (insertSpy.mock.results[0].value.values as jest.Mock)
+        .mock.calls[0][0];
       expect(valuesCall.stock).toBe(10);
       expect(valuesCall.expiresInDays).toBe(30);
       expect(valuesCall.description).toBe('A delicious coffee');
@@ -72,9 +82,14 @@ describe('RewardsService', () => {
       setDb({ insertReturning: [[fixtures.reward]] });
       const insertSpy = jest.spyOn(mockDrizzle.db, 'insert');
 
-      await service.create('biz-1', { name: 'Free Coffee', tier: 'common', probability: 25 });
+      await service.create('biz-1', {
+        name: 'Free Coffee',
+        tier: 'common',
+        probability: 25,
+      });
 
-      const valuesCall = (insertSpy.mock.results[0].value.values as jest.Mock).mock.calls[0][0];
+      const valuesCall = (insertSpy.mock.results[0].value.values as jest.Mock)
+        .mock.calls[0][0];
       expect(valuesCall.stock).toBeUndefined();
       expect(valuesCall.expiresInDays).toBeUndefined();
     });
@@ -105,15 +120,18 @@ describe('RewardsService', () => {
       const updated = { ...fixtures.reward, probability: '10.00', stock: 5 };
       setDb({ updateResult: [updated] });
 
-      const result = await service.update('reward-1', { probability: 10, stock: 5 });
+      const result = await service.update('reward-1', {
+        probability: 10,
+        stock: 5,
+      });
       expect(result).toEqual(updated);
     });
 
     it('throws NotFoundException when reward not found', async () => {
       setDb({ updateResult: [] });
-      await expect(service.update('missing-id', { probability: 10 })).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.update('missing-id', { probability: 10 }),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('can set stock to null (unlimited)', async () => {
@@ -123,7 +141,8 @@ describe('RewardsService', () => {
 
       await service.update('reward-1', { stock: null });
 
-      const setArgs = (updateSpy.mock.results[0].value.set as jest.Mock).mock.calls[0][0];
+      const setArgs = (updateSpy.mock.results[0].value.set as jest.Mock).mock
+        .calls[0][0];
       expect(setArgs).toHaveProperty('stock', null);
     });
 
@@ -134,7 +153,8 @@ describe('RewardsService', () => {
 
       await service.update('reward-1', { expires_in_days: null });
 
-      const setArgs = (updateSpy.mock.results[0].value.set as jest.Mock).mock.calls[0][0];
+      const setArgs = (updateSpy.mock.results[0].value.set as jest.Mock).mock
+        .calls[0][0];
       expect(setArgs).toHaveProperty('expiresInDays', null);
     });
 
@@ -145,7 +165,8 @@ describe('RewardsService', () => {
 
       await service.update('reward-1', { is_active: false });
 
-      const setArgs = (updateSpy.mock.results[0].value.set as jest.Mock).mock.calls[0][0];
+      const setArgs = (updateSpy.mock.results[0].value.set as jest.Mock).mock
+        .calls[0][0];
       expect(setArgs).toHaveProperty('isActive', false);
     });
 
@@ -155,7 +176,8 @@ describe('RewardsService', () => {
 
       await service.update('reward-1', { name: 'New Name' });
 
-      const setArgs = (updateSpy.mock.results[0].value.set as jest.Mock).mock.calls[0][0];
+      const setArgs = (updateSpy.mock.results[0].value.set as jest.Mock).mock
+        .calls[0][0];
       expect(setArgs).toHaveProperty('name', 'New Name');
       expect(setArgs).not.toHaveProperty('probability');
       expect(setArgs).not.toHaveProperty('stock');
@@ -175,7 +197,9 @@ describe('RewardsService', () => {
 
     it('throws NotFoundException when reward not found', async () => {
       setDb({ updateResult: [] });
-      await expect(service.deactivate('missing-id')).rejects.toThrow(NotFoundException);
+      await expect(service.deactivate('missing-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('passes isActive=false in the update payload', async () => {
@@ -184,7 +208,8 @@ describe('RewardsService', () => {
 
       await service.deactivate('reward-1');
 
-      const setArgs = (updateSpy.mock.results[0].value.set as jest.Mock).mock.calls[0][0];
+      const setArgs = (updateSpy.mock.results[0].value.set as jest.Mock).mock
+        .calls[0][0];
       expect(setArgs).toEqual({ isActive: false });
     });
   });

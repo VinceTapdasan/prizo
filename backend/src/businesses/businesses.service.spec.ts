@@ -43,7 +43,9 @@ describe('BusinessesService', () => {
       await service.create('owner-1', { name: 'My Awesome Venue' });
 
       expect(insertSpy).toHaveBeenCalled();
-      const insertedValues = (insertSpy.mock.results[0].value.values as jest.Mock).mock.calls[0][0];
+      const insertedValues = (
+        insertSpy.mock.results[0].value.values as jest.Mock
+      ).mock.calls[0][0];
       expect(insertedValues.slug).toMatch(/^my-awesome-venue-[a-z0-9]{5}$/);
     });
 
@@ -54,9 +56,9 @@ describe('BusinessesService', () => {
       });
       (service as unknown as { drizzle: unknown }).drizzle = mockDrizzle;
 
-      await expect(service.create('owner-1', { name: 'Taken Name' })).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(
+        service.create('owner-1', { name: 'Taken Name' }),
+      ).rejects.toThrow(ConflictException);
     });
 
     it('re-throws unexpected errors from the DB', async () => {
@@ -67,7 +69,9 @@ describe('BusinessesService', () => {
       });
       (service as unknown as { drizzle: unknown }).drizzle = mockDrizzle;
 
-      await expect(service.create('owner-1', { name: 'Venue' })).rejects.toThrow(dbError);
+      await expect(
+        service.create('owner-1', { name: 'Venue' }),
+      ).rejects.toThrow(dbError);
     });
   });
 
@@ -94,7 +98,9 @@ describe('BusinessesService', () => {
       mockDrizzle.db = createMockDb({ selectResults: [[]] });
       (service as unknown as { drizzle: unknown }).drizzle = mockDrizzle;
 
-      await expect(service.findBySlug('non-existent')).rejects.toThrow(NotFoundException);
+      await expect(service.findBySlug('non-existent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('returns only qrActive=true businesses', async () => {
@@ -104,7 +110,9 @@ describe('BusinessesService', () => {
       (service as unknown as { drizzle: unknown }).drizzle = mockDrizzle;
 
       const selectSpy = jest.spyOn(mockDrizzle.db, 'select');
-      await expect(service.findBySlug('inactive-slug')).rejects.toThrow(NotFoundException);
+      await expect(service.findBySlug('inactive-slug')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(selectSpy).toHaveBeenCalled();
     });
   });
@@ -138,7 +146,9 @@ describe('BusinessesService', () => {
       mockDrizzle.db = createMockDb({ updateResult: [updated] });
       (service as unknown as { drizzle: unknown }).drizzle = mockDrizzle;
 
-      const result = await service.update('biz-1', 'owner-1', { name: 'New Name' });
+      const result = await service.update('biz-1', 'owner-1', {
+        name: 'New Name',
+      });
       expect(result).toEqual(updated);
     });
 
@@ -146,9 +156,9 @@ describe('BusinessesService', () => {
       mockDrizzle.db = createMockDb({ updateResult: [] });
       (service as unknown as { drizzle: unknown }).drizzle = mockDrizzle;
 
-      await expect(service.update('biz-1', 'wrong-owner', { name: 'X' })).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.update('biz-1', 'wrong-owner', { name: 'X' }),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('only sets fields that are provided in dto', async () => {
@@ -159,7 +169,8 @@ describe('BusinessesService', () => {
       const updateSpy = jest.spyOn(mockDrizzle.db, 'update');
       await service.update('biz-1', 'owner-1', { points_per_scan: 20 });
 
-      const setArgs = (updateSpy.mock.results[0].value.set as jest.Mock).mock.calls[0][0];
+      const setArgs = (updateSpy.mock.results[0].value.set as jest.Mock).mock
+        .calls[0][0];
       expect(setArgs).not.toHaveProperty('name');
       expect(setArgs.pointsPerScan).toBe(20);
     });
@@ -181,9 +192,9 @@ describe('BusinessesService', () => {
       mockDrizzle.db = createMockDb({ updateResult: [] });
       (service as unknown as { drizzle: unknown }).drizzle = mockDrizzle;
 
-      await expect(service.regenerateQr('biz-missing', 'owner-1')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.regenerateQr('biz-missing', 'owner-1'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -191,14 +202,18 @@ describe('BusinessesService', () => {
 
   describe('generateSlug (private)', () => {
     const gen = (name: string) =>
-      (service as unknown as { generateSlug: (s: string) => string }).generateSlug(name);
+      (
+        service as unknown as { generateSlug: (s: string) => string }
+      ).generateSlug(name);
 
     it('lowercases the name', () => {
       expect(gen('MY VENUE')).toMatch(/^my-venue-/);
     });
 
     it('replaces spaces and special chars with hyphens', () => {
-      expect(gen('The Rusty Barrel & Grill!')).toMatch(/^the-rusty-barrel-grill-/);
+      expect(gen('The Rusty Barrel & Grill!')).toMatch(
+        /^the-rusty-barrel-grill-/,
+      );
     });
 
     it('strips leading and trailing hyphens', () => {

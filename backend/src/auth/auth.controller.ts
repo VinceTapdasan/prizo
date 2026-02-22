@@ -10,10 +10,7 @@ export class AuthController {
   // Called after Google OAuth to provision business_owner role.
   @Post('provision')
   @UseGuards(SupabaseAuthGuard)
-  async provision(
-    @Req() req: any,
-    @Body('role') role: string,
-  ) {
+  async provision(@Req() req: any, @Body('role') role: string) {
     const userId = req.user.id as string;
     const currentRole = req.user.app_metadata?.role;
 

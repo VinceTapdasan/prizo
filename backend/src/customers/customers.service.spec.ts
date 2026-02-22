@@ -40,7 +40,10 @@ describe('CustomersService', () => {
     it('creates and returns a new customer when not found', async () => {
       setDb({ selectResults: [[]], insertReturning: [[fixtures.customer]] });
 
-      const result = await service.findOrCreateByPhone('+61412345678', 'user-1');
+      const result = await service.findOrCreateByPhone(
+        '+61412345678',
+        'user-1',
+      );
       expect(result).toEqual(fixtures.customer);
     });
 
@@ -50,7 +53,8 @@ describe('CustomersService', () => {
 
       await service.findOrCreateByPhone('+61412345678', 'user-abc');
 
-      const valuesCall = (insertSpy.mock.results[0].value.values as jest.Mock).mock.calls[0][0];
+      const valuesCall = (insertSpy.mock.results[0].value.values as jest.Mock)
+        .mock.calls[0][0];
       expect(valuesCall.userId).toBe('user-abc');
     });
 
@@ -60,7 +64,8 @@ describe('CustomersService', () => {
 
       await service.findOrCreateByPhone('+61400000000');
 
-      const valuesCall = (insertSpy.mock.results[0].value.values as jest.Mock).mock.calls[0][0];
+      const valuesCall = (insertSpy.mock.results[0].value.values as jest.Mock)
+        .mock.calls[0][0];
       expect(valuesCall.userId).toBeNull();
     });
   });
@@ -69,7 +74,11 @@ describe('CustomersService', () => {
 
   describe('getLoyaltyForBusiness', () => {
     it('returns loyalty data and rewards for existing customer', async () => {
-      const cb = { loyaltyPoints: 40, pityCounter: 2, lastSpinAt: '2025-01-01T10:00:00Z' };
+      const cb = {
+        loyaltyPoints: 40,
+        pityCounter: 2,
+        lastSpinAt: '2025-01-01T10:00:00Z',
+      };
       const rewards = [
         {
           id: 'cr-1',
@@ -137,8 +146,15 @@ describe('CustomersService', () => {
 
   describe('redeemReward', () => {
     it('redeems an unclaimed, non-expired reward', async () => {
-      const redeemed = { ...fixtures.customerReward, status: 'redeemed', redeemedAt: new Date().toISOString() };
-      setDb({ selectResults: [[fixtures.customerReward]], updateResult: [redeemed] });
+      const redeemed = {
+        ...fixtures.customerReward,
+        status: 'redeemed',
+        redeemedAt: new Date().toISOString(),
+      };
+      setDb({
+        selectResults: [[fixtures.customerReward]],
+        updateResult: [redeemed],
+      });
 
       const result = await service.redeemReward('cr-1', 'cust-1');
       expect(result.status).toBe('redeemed');
@@ -146,7 +162,9 @@ describe('CustomersService', () => {
 
     it('throws NotFoundException when reward not found or already redeemed', async () => {
       setDb({ selectResults: [[]] });
-      await expect(service.redeemReward('missing-id', 'cust-1')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.redeemReward('missing-id', 'cust-1'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('throws NotFoundException and marks expired when reward is past expiry', async () => {
@@ -154,21 +172,34 @@ describe('CustomersService', () => {
         ...fixtures.customerReward,
         expiresAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // yesterday
       };
-      setDb({ selectResults: [[expiredReward]], updateResult: [{ ...expiredReward, status: 'expired' }] });
+      setDb({
+        selectResults: [[expiredReward]],
+        updateResult: [{ ...expiredReward, status: 'expired' }],
+      });
 
-      await expect(service.redeemReward('cr-1', 'cust-1')).rejects.toThrow(NotFoundException);
+      await expect(service.redeemReward('cr-1', 'cust-1')).rejects.toThrow(
+        NotFoundException,
+      );
       // The update to set status='expired' should be called
       expect(mockDrizzle.db.update).toHaveBeenCalled();
     });
 
     it('sets redeemedAt timestamp on successful redemption', async () => {
-      const redeemed = { ...fixtures.customerReward, status: 'redeemed', redeemedAt: new Date().toISOString() };
-      setDb({ selectResults: [[fixtures.customerReward]], updateResult: [redeemed] });
+      const redeemed = {
+        ...fixtures.customerReward,
+        status: 'redeemed',
+        redeemedAt: new Date().toISOString(),
+      };
+      setDb({
+        selectResults: [[fixtures.customerReward]],
+        updateResult: [redeemed],
+      });
       const updateSpy = jest.spyOn(mockDrizzle.db, 'update');
 
       await service.redeemReward('cr-1', 'cust-1');
 
-      const setArgs = (updateSpy.mock.results[0].value.set as jest.Mock).mock.calls[0][0];
+      const setArgs = (updateSpy.mock.results[0].value.set as jest.Mock).mock
+        .calls[0][0];
       expect(setArgs.status).toBe('redeemed');
       expect(setArgs.redeemedAt).toBeDefined();
     });
@@ -180,7 +211,9 @@ describe('CustomersService', () => {
       };
       setDb({ selectResults: [[expiredReward]], updateResult: [] });
 
-      await expect(service.redeemReward('cr-1', 'cust-1')).rejects.toThrow('expired');
+      await expect(service.redeemReward('cr-1', 'cust-1')).rejects.toThrow(
+        'expired',
+      );
     });
   });
 

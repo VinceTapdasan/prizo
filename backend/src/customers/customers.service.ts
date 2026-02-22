@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { eq, and, desc, lt } from 'drizzle-orm';
 import { DrizzleService } from '../db/drizzle.service';
 import * as schema from '../db/schema';
@@ -7,9 +11,14 @@ import * as schema from '../db/schema';
 export class CustomersService {
   constructor(private readonly drizzle: DrizzleService) {}
 
-  async checkPhone(phone: string): Promise<{ exists: boolean; has_password: boolean }> {
+  async checkPhone(
+    phone: string,
+  ): Promise<{ exists: boolean; has_password: boolean }> {
     const [customer] = await this.drizzle.db
-      .select({ id: schema.customers.id, hasPassword: schema.customers.hasPassword })
+      .select({
+        id: schema.customers.id,
+        hasPassword: schema.customers.hasPassword,
+      })
       .from(schema.customers)
       .where(eq(schema.customers.phoneNumber, phone))
       .limit(1);
@@ -78,7 +87,10 @@ export class CustomersService {
         rewardDescription: schema.rewards.description,
       })
       .from(schema.customerRewards)
-      .innerJoin(schema.rewards, eq(schema.customerRewards.rewardId, schema.rewards.id))
+      .innerJoin(
+        schema.rewards,
+        eq(schema.customerRewards.rewardId, schema.rewards.id),
+      )
       .where(
         and(
           eq(schema.customerRewards.customerId, customerId),
@@ -110,8 +122,14 @@ export class CustomersService {
         businessSlug: schema.businesses.slug,
       })
       .from(schema.customerRewards)
-      .innerJoin(schema.rewards, eq(schema.customerRewards.rewardId, schema.rewards.id))
-      .innerJoin(schema.businesses, eq(schema.customerRewards.businessId, schema.businesses.id))
+      .innerJoin(
+        schema.rewards,
+        eq(schema.customerRewards.rewardId, schema.rewards.id),
+      )
+      .innerJoin(
+        schema.businesses,
+        eq(schema.customerRewards.businessId, schema.businesses.id),
+      )
       .where(eq(schema.customerRewards.customerId, customerId))
       .orderBy(desc(schema.customerRewards.createdAt));
   }
@@ -129,7 +147,8 @@ export class CustomersService {
       )
       .limit(1);
 
-    if (!reward) throw new NotFoundException('Reward not found or already redeemed');
+    if (!reward)
+      throw new NotFoundException('Reward not found or already redeemed');
 
     if (new Date(reward.expiresAt) < new Date()) {
       await this.drizzle.db
@@ -162,8 +181,14 @@ export class CustomersService {
         resetTime: schema.businesses.resetTime,
       })
       .from(schema.customerBusiness)
-      .innerJoin(schema.customers, eq(schema.customerBusiness.customerId, schema.customers.id))
-      .innerJoin(schema.businesses, eq(schema.customerBusiness.businessId, schema.businesses.id))
+      .innerJoin(
+        schema.customers,
+        eq(schema.customerBusiness.customerId, schema.customers.id),
+      )
+      .innerJoin(
+        schema.businesses,
+        eq(schema.customerBusiness.businessId, schema.businesses.id),
+      )
       .where(eq(schema.customers.userId, userId))
       .orderBy(desc(schema.customerBusiness.lastSpinAt));
 
@@ -187,7 +212,10 @@ export class CustomersService {
     });
   }
 
-  private isSpinAvailable(lastSpinAt: string | null, resetTime: string): boolean {
+  private isSpinAvailable(
+    lastSpinAt: string | null,
+    resetTime: string,
+  ): boolean {
     if (!lastSpinAt) return true;
     const now = new Date();
     const last = new Date(lastSpinAt);
@@ -224,7 +252,10 @@ export class CustomersService {
         rewardDescription: schema.rewards.description,
       })
       .from(schema.customerRewards)
-      .innerJoin(schema.rewards, eq(schema.customerRewards.rewardId, schema.rewards.id))
+      .innerJoin(
+        schema.rewards,
+        eq(schema.customerRewards.rewardId, schema.rewards.id),
+      )
       .where(
         and(
           eq(schema.customerRewards.customerId, customerId),
@@ -234,11 +265,19 @@ export class CustomersService {
       .orderBy(desc(schema.customerRewards.createdAt));
   }
 
-  async getCustomersWithRewardsForBusiness(businessId: string, ownerId: string) {
+  async getCustomersWithRewardsForBusiness(
+    businessId: string,
+    ownerId: string,
+  ) {
     const [business] = await this.drizzle.db
       .select({ id: schema.businesses.id })
       .from(schema.businesses)
-      .where(and(eq(schema.businesses.id, businessId), eq(schema.businesses.ownerId, ownerId)))
+      .where(
+        and(
+          eq(schema.businesses.id, businessId),
+          eq(schema.businesses.ownerId, ownerId),
+        ),
+      )
       .limit(1);
 
     if (!business) throw new ForbiddenException('Not your business');
@@ -264,7 +303,10 @@ export class CustomersService {
         lastSpinAt: schema.customerBusiness.lastSpinAt,
       })
       .from(schema.customerBusiness)
-      .innerJoin(schema.customers, eq(schema.customerBusiness.customerId, schema.customers.id))
+      .innerJoin(
+        schema.customers,
+        eq(schema.customerBusiness.customerId, schema.customers.id),
+      )
       .where(eq(schema.customerBusiness.businessId, businessId))
       .orderBy(desc(schema.customerBusiness.loyaltyPoints));
 
@@ -280,7 +322,10 @@ export class CustomersService {
         rewardTier: schema.rewards.tier,
       })
       .from(schema.customerRewards)
-      .innerJoin(schema.rewards, eq(schema.customerRewards.rewardId, schema.rewards.id))
+      .innerJoin(
+        schema.rewards,
+        eq(schema.customerRewards.rewardId, schema.rewards.id),
+      )
       .where(eq(schema.customerRewards.businessId, businessId))
       .orderBy(desc(schema.customerRewards.createdAt));
 

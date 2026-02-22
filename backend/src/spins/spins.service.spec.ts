@@ -5,7 +5,8 @@ import { DrizzleService } from '../db/drizzle.service';
 import { createMockDb, makeChain, fixtures } from '../__test-utils__/mock-db';
 
 // Helper to access private methods
-const priv = (svc: SpinsService) => svc as unknown as Record<string, (...args: unknown[]) => unknown>;
+const priv = (svc: SpinsService) =>
+  svc as unknown as Record<string, (...args: unknown[]) => unknown>;
 
 describe('SpinsService', () => {
   let service: SpinsService;
@@ -27,22 +28,26 @@ describe('SpinsService', () => {
       expect(priv(service).isSpinAvailable(null, '05:00:00')).toBe(true);
     });
 
-    it('returns true when last spin was before today\'s reset time', () => {
+    it("returns true when last spin was before today's reset time", () => {
       // Reset is at 05:00. Last spin was yesterday at 10:00 (before today's reset).
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       yesterday.setHours(10, 0, 0, 0);
-      expect(priv(service).isSpinAvailable(yesterday.toISOString(), '05:00:00')).toBe(true);
+      expect(
+        priv(service).isSpinAvailable(yesterday.toISOString(), '05:00:00'),
+      ).toBe(true);
     });
 
-    it('returns false when last spin was after today\'s reset time', () => {
+    it("returns false when last spin was after today's reset time", () => {
       // Reset is at 05:00. Last spin was today at 08:00 (after reset).
       const today = new Date();
       today.setHours(8, 0, 0, 0);
       // Only run this test if current time is past 08:00 (so last spin is in the past today)
       const now = new Date();
       if (now.getHours() >= 8) {
-        expect(priv(service).isSpinAvailable(today.toISOString(), '05:00:00')).toBe(false);
+        expect(
+          priv(service).isSpinAvailable(today.toISOString(), '05:00:00'),
+        ).toBe(false);
       } else {
         // Before 08:00, treat as yesterday scenario — still available
         expect(true).toBe(true); // skip effectively
@@ -54,7 +59,9 @@ describe('SpinsService', () => {
       // Adjust to be before today's 05:00 reset by using a time clearly in the past
       past.setHours(2, 0, 0, 0);
       past.setDate(past.getDate() - 1);
-      expect(priv(service).isSpinAvailable(past.toISOString(), '05:00:00')).toBe(true);
+      expect(
+        priv(service).isSpinAvailable(past.toISOString(), '05:00:00'),
+      ).toBe(true);
     });
 
     it('handles midnight reset time (00:00:00)', () => {
@@ -62,7 +69,9 @@ describe('SpinsService', () => {
       yesterday.setDate(yesterday.getDate() - 1);
       yesterday.setHours(23, 0, 0, 0);
       // Last spin was at 23:00 yesterday, reset at midnight — should be available (it's a new day)
-      expect(priv(service).isSpinAvailable(yesterday.toISOString(), '00:00:00')).toBe(true);
+      expect(
+        priv(service).isSpinAvailable(yesterday.toISOString(), '00:00:00'),
+      ).toBe(true);
     });
 
     it('returns false for a very recent spin (seconds ago)', () => {
@@ -71,7 +80,9 @@ describe('SpinsService', () => {
       const resetHour = 5;
       if (now.getHours() >= resetHour) {
         const recentSpin = new Date(Date.now() - 5000); // 5 seconds ago
-        expect(priv(service).isSpinAvailable(recentSpin.toISOString(), '05:00:00')).toBe(false);
+        expect(
+          priv(service).isSpinAvailable(recentSpin.toISOString(), '05:00:00'),
+        ).toBe(false);
       } else {
         expect(true).toBe(true); // Before reset hour — different logic applies
       }
@@ -100,7 +111,7 @@ describe('SpinsService', () => {
     });
 
     it('returns the correct reward in a multi-reward pool based on cumulative probability', () => {
-      jest.spyOn(Math, 'random').mockReturnValue(0.30); // roll = 30
+      jest.spyOn(Math, 'random').mockReturnValue(0.3); // roll = 30
       const rewards = [
         { ...fixtures.reward, id: 'r1', probability: '25.00' }, // 0–25
         { ...fixtures.rareReward, id: 'r2', probability: '10.00' }, // 25–35
@@ -125,12 +136,19 @@ describe('SpinsService', () => {
 
   describe('pickPityReward', () => {
     const common = { ...fixtures.reward, tier: 'common' as const };
-    const uncommon = { ...fixtures.reward, id: 'r-unc', tier: 'uncommon' as const };
+    const uncommon = {
+      ...fixtures.reward,
+      id: 'r-unc',
+      tier: 'uncommon' as const,
+    };
     const rare = { ...fixtures.rareReward, tier: 'rare' as const };
 
     it('returns only from rewards at or above pityMinTier', () => {
       jest.spyOn(Math, 'random').mockReturnValue(0);
-      const result = priv(service).pickPityReward([common, uncommon, rare], 'uncommon');
+      const result = priv(service).pickPityReward(
+        [common, uncommon, rare],
+        'uncommon',
+      );
       expect(['uncommon', 'rare']).toContain((result as typeof uncommon).tier);
       jest.spyOn(Math, 'random').mockRestore();
     });
@@ -146,7 +164,10 @@ describe('SpinsService', () => {
     it('picks an epic reward when available and pityMinTier is epic', () => {
       const epic = { ...fixtures.reward, id: 'r-epic', tier: 'epic' as const };
       jest.spyOn(Math, 'random').mockReturnValue(0);
-      const result = priv(service).pickPityReward([common, uncommon, rare, epic], 'epic');
+      const result = priv(service).pickPityReward(
+        [common, uncommon, rare, epic],
+        'epic',
+      );
       expect((result as typeof epic).tier).toBe('epic');
       jest.spyOn(Math, 'random').mockRestore();
     });
@@ -169,7 +190,9 @@ describe('SpinsService', () => {
       const mockDb = createMockDb({
         selectResults: [[fixtures.business], []],
       });
-      (service as unknown as { drizzle: { db: unknown } }).drizzle = { db: mockDb };
+      (service as unknown as { drizzle: { db: unknown } }).drizzle = {
+        db: mockDb,
+      };
 
       const result = await service.getSpinStatus('biz-1', 'cust-1');
 
@@ -179,10 +202,16 @@ describe('SpinsService', () => {
     });
 
     it('calculates spins_until_guaranteed correctly', async () => {
-      const cb = { ...fixtures.customerBusiness, pityCounter: 3, lastSpinAt: null };
+      const cb = {
+        ...fixtures.customerBusiness,
+        pityCounter: 3,
+        lastSpinAt: null,
+      };
       const biz = { ...fixtures.business, pityThreshold: 7 };
       const mockDb = createMockDb({ selectResults: [[biz], [cb]] });
-      (service as unknown as { drizzle: { db: unknown } }).drizzle = { db: mockDb };
+      (service as unknown as { drizzle: { db: unknown } }).drizzle = {
+        db: mockDb,
+      };
 
       const result = await service.getSpinStatus('biz-1', 'cust-1');
       expect(result.spins_until_guaranteed).toBe(4); // 7 - 3
@@ -196,8 +225,12 @@ describe('SpinsService', () => {
         ...fixtures.customerBusiness,
         lastSpinAt: new Date().toISOString(),
       };
-      const mockDb = createMockDb({ selectResults: [[fixtures.business], [cb]] });
-      (service as unknown as { drizzle: { db: unknown } }).drizzle = { db: mockDb };
+      const mockDb = createMockDb({
+        selectResults: [[fixtures.business], [cb]],
+      });
+      (service as unknown as { drizzle: { db: unknown } }).drizzle = {
+        db: mockDb,
+      };
 
       const result = await service.getSpinStatus('biz-1', 'cust-1');
       // If spin unavailable, spins_until_guaranteed should be null
@@ -242,13 +275,21 @@ describe('SpinsService', () => {
       };
 
       const tx = createTxMock({ cb: cbWithRecentSpin });
-      const mockDb = { transaction: jest.fn().mockImplementation((fn: (tx: unknown) => unknown) => fn(tx)) };
-      (service as unknown as { drizzle: { db: unknown } }).drizzle = { db: mockDb };
+      const mockDb = {
+        transaction: jest
+          .fn()
+          .mockImplementation((fn: (tx: unknown) => unknown) => fn(tx)),
+      };
+      (service as unknown as { drizzle: { db: unknown } }).drizzle = {
+        db: mockDb,
+      };
 
       const now = new Date();
       if (now.getHours() >= 5) {
         // After reset — spin should be unavailable if last spin was after reset today
-        await expect(service.executeSpin('biz-1', 'cust-1')).rejects.toThrow(BadRequestException);
+        await expect(service.executeSpin('biz-1', 'cust-1')).rejects.toThrow(
+          BadRequestException,
+        );
       } else {
         expect(true).toBe(true); // Before 05:00 — time-sensitive, skip
       }
@@ -257,28 +298,52 @@ describe('SpinsService', () => {
     it('throws NotFoundException when business is not found', async () => {
       let selectIdx = 0;
       const tx = {
-        select: jest.fn(() => makeChain(selectIdx++ === 0 ? [] : [fixtures.customerBusiness])),
-        insert: jest.fn(() => ({ values: jest.fn().mockReturnThis(), onConflictDoNothing: jest.fn(() => Promise.resolve()) })),
-        update: jest.fn(() => ({ set: jest.fn().mockReturnThis(), where: jest.fn(() => Promise.resolve()) })),
+        select: jest.fn(() =>
+          makeChain(selectIdx++ === 0 ? [] : [fixtures.customerBusiness]),
+        ),
+        insert: jest.fn(() => ({
+          values: jest.fn().mockReturnThis(),
+          onConflictDoNothing: jest.fn(() => Promise.resolve()),
+        })),
+        update: jest.fn(() => ({
+          set: jest.fn().mockReturnThis(),
+          where: jest.fn(() => Promise.resolve()),
+        })),
       };
-      const mockDb = { transaction: jest.fn().mockImplementation((fn: (tx: unknown) => unknown) => fn(tx)) };
-      (service as unknown as { drizzle: { db: unknown } }).drizzle = { db: mockDb };
+      const mockDb = {
+        transaction: jest
+          .fn()
+          .mockImplementation((fn: (tx: unknown) => unknown) => fn(tx)),
+      };
+      (service as unknown as { drizzle: { db: unknown } }).drizzle = {
+        db: mockDb,
+      };
 
-      await expect(service.executeSpin('biz-missing', 'cust-1')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.executeSpin('biz-missing', 'cust-1'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('records a miss when roll exceeds total probability', async () => {
       jest.spyOn(Math, 'random').mockReturnValue(0.99); // roll = 99 → miss (only 25% reward)
       const tx = createTxMock();
-      const mockDb = { transaction: jest.fn().mockImplementation((fn: (tx: unknown) => unknown) => fn(tx)) };
-      (service as unknown as { drizzle: { db: unknown } }).drizzle = { db: mockDb };
+      const mockDb = {
+        transaction: jest
+          .fn()
+          .mockImplementation((fn: (tx: unknown) => unknown) => fn(tx)),
+      };
+      (service as unknown as { drizzle: { db: unknown } }).drizzle = {
+        db: mockDb,
+      };
 
       const result = await service.executeSpin('biz-1', 'cust-1');
 
       expect(result.won).toBe(false);
       expect(result.reward).toBeNull();
       expect(result.points_earned).toBe(fixtures.business.pointsPerScan);
-      expect(result.pity_counter).toBe(fixtures.customerBusiness.pityCounter + 1);
+      expect(result.pity_counter).toBe(
+        fixtures.customerBusiness.pityCounter + 1,
+      );
       jest.spyOn(Math, 'random').mockRestore();
     });
 
@@ -288,12 +353,20 @@ describe('SpinsService', () => {
       const insertFn = jest.fn(() => ({
         values: jest.fn().mockReturnThis(),
         onConflictDoNothing: jest.fn(() => Promise.resolve(undefined)),
-        returning: jest.fn(() => Promise.resolve([{ ...fixtures.spin, id: 'spin-new' }])),
+        returning: jest.fn(() =>
+          Promise.resolve([{ ...fixtures.spin, id: 'spin-new' }]),
+        ),
       }));
       tx.insert = insertFn;
 
-      const mockDb = { transaction: jest.fn().mockImplementation((fn: (tx: unknown) => unknown) => fn(tx)) };
-      (service as unknown as { drizzle: { db: unknown } }).drizzle = { db: mockDb };
+      const mockDb = {
+        transaction: jest
+          .fn()
+          .mockImplementation((fn: (tx: unknown) => unknown) => fn(tx)),
+      };
+      (service as unknown as { drizzle: { db: unknown } }).drizzle = {
+        db: mockDb,
+      };
 
       const result = await service.executeSpin('biz-1', 'cust-1');
 
@@ -316,8 +389,14 @@ describe('SpinsService', () => {
       const rewards = [fixtures.rareReward];
       const tx = createTxMock({ cb: cbAtPity, rewards });
 
-      const mockDb = { transaction: jest.fn().mockImplementation((fn: (tx: unknown) => unknown) => fn(tx)) };
-      (service as unknown as { drizzle: { db: unknown } }).drizzle = { db: mockDb };
+      const mockDb = {
+        transaction: jest
+          .fn()
+          .mockImplementation((fn: (tx: unknown) => unknown) => fn(tx)),
+      };
+      (service as unknown as { drizzle: { db: unknown } }).drizzle = {
+        db: mockDb,
+      };
 
       const result = await service.executeSpin('biz-1', 'cust-1');
 
@@ -328,10 +407,20 @@ describe('SpinsService', () => {
 
     it('accumulates points correctly on each spin', async () => {
       jest.spyOn(Math, 'random').mockReturnValue(0.99); // miss
-      const cb = { ...fixtures.customerBusiness, loyaltyPoints: 50, lastSpinAt: null };
+      const cb = {
+        ...fixtures.customerBusiness,
+        loyaltyPoints: 50,
+        lastSpinAt: null,
+      };
       const tx = createTxMock({ cb });
-      const mockDb = { transaction: jest.fn().mockImplementation((fn: (tx: unknown) => unknown) => fn(tx)) };
-      (service as unknown as { drizzle: { db: unknown } }).drizzle = { db: mockDb };
+      const mockDb = {
+        transaction: jest
+          .fn()
+          .mockImplementation((fn: (tx: unknown) => unknown) => fn(tx)),
+      };
+      (service as unknown as { drizzle: { db: unknown } }).drizzle = {
+        db: mockDb,
+      };
 
       const result = await service.executeSpin('biz-1', 'cust-1');
       expect(result.total_points).toBe(50 + fixtures.business.pointsPerScan);

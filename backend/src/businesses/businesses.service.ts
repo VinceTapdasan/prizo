@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
 import { DrizzleService } from '../db/drizzle.service';
 import * as schema from '../db/schema';
@@ -7,17 +11,27 @@ import * as schema from '../db/schema';
 export class BusinessesService {
   constructor(private readonly drizzle: DrizzleService) {}
 
-  async create(ownerId: string, dto: { name: string; type?: string; location?: string }) {
+  async create(
+    ownerId: string,
+    dto: { name: string; type?: string; location?: string },
+  ) {
     const slug = this.generateSlug(dto.name);
 
     try {
       const [business] = await this.drizzle.db
         .insert(schema.businesses)
-        .values({ ownerId, name: dto.name, slug, type: dto.type, location: dto.location })
+        .values({
+          ownerId,
+          name: dto.name,
+          slug,
+          type: dto.type,
+          location: dto.location,
+        })
         .returning();
       return business;
     } catch (e: any) {
-      if (e?.code === '23505') throw new ConflictException('Slug already taken');
+      if (e?.code === '23505')
+        throw new ConflictException('Slug already taken');
       throw e;
     }
   }
@@ -33,7 +47,12 @@ export class BusinessesService {
         qrActive: schema.businesses.qrActive,
       })
       .from(schema.businesses)
-      .where(and(eq(schema.businesses.slug, slug), eq(schema.businesses.qrActive, true)))
+      .where(
+        and(
+          eq(schema.businesses.slug, slug),
+          eq(schema.businesses.qrActive, true),
+        ),
+      )
       .limit(1);
 
     if (!business) throw new NotFoundException('Business not found');
@@ -67,7 +86,12 @@ export class BusinessesService {
         ...(dto.pity_threshold && { pityThreshold: dto.pity_threshold }),
         updatedAt: new Date().toISOString(),
       })
-      .where(and(eq(schema.businesses.id, id), eq(schema.businesses.ownerId, ownerId)))
+      .where(
+        and(
+          eq(schema.businesses.id, id),
+          eq(schema.businesses.ownerId, ownerId),
+        ),
+      )
       .returning();
 
     if (!updated) throw new NotFoundException('Business not found');
@@ -80,7 +104,12 @@ export class BusinessesService {
     const [updated] = await this.drizzle.db
       .update(schema.businesses)
       .set({ slug: newSlug, updatedAt: new Date().toISOString() })
-      .where(and(eq(schema.businesses.id, id), eq(schema.businesses.ownerId, ownerId)))
+      .where(
+        and(
+          eq(schema.businesses.id, id),
+          eq(schema.businesses.ownerId, ownerId),
+        ),
+      )
       .returning();
 
     if (!updated) throw new NotFoundException('Business not found');

@@ -9,6 +9,7 @@ import { api } from '@/lib/api';
 import type { SpinResult, RewardTier } from '@/lib/types';
 
 const PHONE_KEY = 'prizo_phone';
+const OTP_ENABLED = process.env.NEXT_PUBLIC_OTP_ENABLED !== '0';
 
 function toPHE164(local: string): string {
   const digits = local.replace(/\D/g, '');
@@ -153,6 +154,20 @@ export default function SpinPage() {
 
   async function handleStartClaim() {
     if (!phone || !result?.customer_reward_id) return;
+
+    if (!OTP_ENABLED) {
+      resetClaimState();
+      setPhase('claiming');
+      setClaimStatus('auto-claiming');
+      try {
+        await api.customers.redeemRewardPublic(result.customer_reward_id, phone);
+        setPhase('claimed');
+      } catch (err: unknown) {
+        setClaimError(err instanceof Error ? err.message : 'Failed to claim');
+        setClaimStatus('otp-only');
+      }
+      return;
+    }
 
     resetClaimState();
     setPhase('claiming');

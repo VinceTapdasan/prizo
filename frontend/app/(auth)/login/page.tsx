@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { toast } from 'sonner';
 
 const PHONE_KEY = 'prizo_phone';
+const OTP_ENABLED = process.env.NEXT_PUBLIC_OTP_ENABLED !== '0';
 
 function toPHE164(local: string): string {
   const digits = local.replace(/\D/g, '');
@@ -71,6 +72,13 @@ export default function LoginPage() {
     e.preventDefault();
     const phone = toPHE164(localPhone);
     setE164Phone(phone);
+
+    if (!OTP_ENABLED) {
+      localStorage.setItem(PHONE_KEY, phone);
+      router.replace('/my-venues');
+      return;
+    }
+
     setPhase('checking');
     try {
       const { has_password } = await api.customers.checkPhone(phone);

@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Param, Body, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { BusinessesService } from './businesses.service';
 import { SupabaseAuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -11,7 +20,10 @@ export class BusinessesController {
   @Post()
   @UseGuards(SupabaseAuthGuard, RolesGuard)
   @Roles('business_owner')
-  create(@Req() req: any, @Body() body: { name: string; type?: string; location?: string }) {
+  create(
+    @Req() req: any,
+    @Body() body: { name: string; type?: string; location?: string },
+  ) {
     return this.businesses.create(req.user.id, body);
   }
 

@@ -1,5 +1,9 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { eq, and, count } from 'drizzle-orm';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
+import { eq, and } from 'drizzle-orm';
 import { DrizzleService } from '../db/drizzle.service';
 import * as schema from '../db/schema';
 import type { Reward } from '../db/schema';
@@ -14,7 +18,10 @@ export class SpinsService {
 
   async getSpinStatus(businessId: string, customerId: string) {
     const [business] = await this.drizzle.db
-      .select({ resetTime: schema.businesses.resetTime, pityThreshold: schema.businesses.pityThreshold })
+      .select({
+        resetTime: schema.businesses.resetTime,
+        pityThreshold: schema.businesses.pityThreshold,
+      })
       .from(schema.businesses)
       .where(eq(schema.businesses.id, businessId))
       .limit(1);
@@ -45,7 +52,9 @@ export class SpinsService {
       available,
       pity_counter: pityCounter,
       pity_threshold: pityThreshold,
-      spins_until_guaranteed: available ? Math.max(0, pityThreshold - pityCounter) : null,
+      spins_until_guaranteed: available
+        ? Math.max(0, pityThreshold - pityCounter)
+        : null,
       loyalty_points: cb?.loyaltyPoints ?? 0,
     };
   }
@@ -108,7 +117,8 @@ export class SpinsService {
         );
 
       // 5. RNG with pity check
-      const pityTriggered = cb.pityCounter >= business.pityThreshold && rewards.length > 0;
+      const pityTriggered =
+        cb.pityCounter >= business.pityThreshold && rewards.length > 0;
       let wonReward: Reward | null = null;
 
       if (pityTriggered) {
@@ -138,14 +148,17 @@ export class SpinsService {
           Date.now() + expiresInDays * 24 * 60 * 60 * 1000,
         ).toISOString();
 
-        const [cr] = await tx.insert(schema.customerRewards).values({
-          customerId,
-          businessId,
-          rewardId: wonReward.id,
-          spinId: spin.id,
-          status: 'unclaimed',
-          expiresAt,
-        }).returning();
+        const [cr] = await tx
+          .insert(schema.customerRewards)
+          .values({
+            customerId,
+            businessId,
+            rewardId: wonReward.id,
+            spinId: spin.id,
+            status: 'unclaimed',
+            expiresAt,
+          })
+          .returning();
         customerRewardId = cr.id;
         customerRewardExpiresAt = expiresAt;
       }
@@ -187,22 +200,27 @@ export class SpinsService {
     });
 
     // Log asynchronously — don't block the spin response
-    this.activityLogs.logSpin(businessId, customerId, {
-      won: result.won,
-      tier: result.reward?.tier ?? null,
-      reward_name: result.reward?.name ?? null,
-      pity_triggered: result.pity_triggered,
-      points_earned: result.points_earned,
-      total_points: result.total_points,
-      is_first_visit: isFirstVisit,
-    }).catch(() => {
-      // Non-fatal — log failure should not break the spin
-    });
+    this.activityLogs
+      .logSpin(businessId, customerId, {
+        won: result.won,
+        tier: result.reward?.tier ?? null,
+        reward_name: result.reward?.name ?? null,
+        pity_triggered: result.pity_triggered,
+        points_earned: result.points_earned,
+        total_points: result.total_points,
+        is_first_visit: isFirstVisit,
+      })
+      .catch(() => {
+        // Non-fatal — log failure should not break the spin
+      });
 
     return result;
   }
 
-  private isSpinAvailable(lastSpinAt: string | null, resetTime: string): boolean {
+  private isSpinAvailable(
+    lastSpinAt: string | null,
+    resetTime: string,
+  ): boolean {
     if (!lastSpinAt) return true;
 
     const now = new Date();

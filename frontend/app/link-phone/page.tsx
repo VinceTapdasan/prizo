@@ -6,6 +6,7 @@ import { CheckCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 const PHONE_KEY = 'prizo_phone';
+const OTP_ENABLED = process.env.NEXT_PUBLIC_OTP_ENABLED !== '0';
 
 function toPHE164(local: string): string {
   const digits = local.replace(/\D/g, '');
@@ -32,6 +33,14 @@ export default function LinkPhonePage() {
     e.preventDefault();
     const phone = toPHE164(localPhone);
     setE164Phone(phone);
+
+    if (!OTP_ENABLED) {
+      localStorage.setItem(PHONE_KEY, phone);
+      setPhase('done');
+      setTimeout(() => router.replace('/dashboard'), 1200);
+      return;
+    }
+
     setPhase('sending');
     setSendingOtp(true);
     try {

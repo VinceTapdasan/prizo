@@ -14,8 +14,10 @@ export function makeChain(value: unknown) {
     orderBy: jest.fn(() => Promise.resolve(value)),
     set: jest.fn(() => chain),
     // PromiseLike — makes `await chain` resolve to value
-    then: (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) =>
-      asPromise().then(resolve, reject),
+    then: (
+      resolve: (v: unknown) => unknown,
+      reject?: (e: unknown) => unknown,
+    ) => asPromise().then(resolve, reject),
     catch: (reject: (e: unknown) => unknown) => asPromise().catch(reject),
     finally: (fn: () => void) => asPromise().finally(fn),
   });
@@ -42,7 +44,9 @@ export function createMockDb({
     insert: jest.fn(() => ({
       values: jest.fn().mockReturnThis(),
       onConflictDoNothing: jest.fn(() => Promise.resolve(undefined)),
-      returning: jest.fn(() => Promise.resolve(insertReturning[insertIdx++] ?? [])),
+      returning: jest.fn(() =>
+        Promise.resolve(insertReturning[insertIdx++] ?? []),
+      ),
     })),
     update: jest.fn(() => ({
       set: jest.fn().mockReturnThis(),

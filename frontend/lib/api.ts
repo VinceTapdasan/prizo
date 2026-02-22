@@ -70,6 +70,11 @@ export const api = {
       apiFetch(`/businesses/${businessId}/customers`),
     redeemReward: (id: string) =>
       apiFetch(`/customer-rewards/${id}/redeem`, { method: 'POST' }),
+    redeemRewardPublic: (id: string, phone: string) =>
+      apiFetch(`/customer-rewards/${id}/redeem-public`, {
+        method: 'POST',
+        body: JSON.stringify({ phone }),
+      }),
   },
   admin: {
     getBusinesses: () => apiFetch('/admin/businesses'),

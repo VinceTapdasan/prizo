@@ -48,7 +48,9 @@ export async function GET(request: Request) {
       }
 
       // If Google user has no phone linked, prompt them to add one
-      if (!data.user.phone) {
+      // Skip when OTP is disabled — phone linking requires SMS verification
+      const otpEnabled = process.env.NEXT_PUBLIC_OTP_ENABLED !== '0';
+      if (!data.user.phone && otpEnabled) {
         return NextResponse.redirect(`${origin}/link-phone`);
       }
 

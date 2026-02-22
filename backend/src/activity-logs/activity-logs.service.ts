@@ -16,7 +16,11 @@ export interface SpinLogDetails {
 export class ActivityLogsService {
   constructor(private readonly drizzle: DrizzleService) {}
 
-  async logSpin(businessId: string, customerId: string, details: SpinLogDetails) {
+  async logSpin(
+    businessId: string,
+    customerId: string,
+    details: SpinLogDetails,
+  ) {
     await this.drizzle.db.insert(schema.activityLogs).values({
       businessId,
       customerId,

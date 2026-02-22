@@ -12,30 +12,34 @@ export class AdminService {
 
     const stats = await Promise.all(
       businesses.map(async (b) => {
-        const [[totalCustomers], [totalSpins], [returningCustomers]] = await Promise.all([
-          this.drizzle.db
-            .select({ count: count() })
-            .from(schema.customerBusiness)
-            .where(eq(schema.customerBusiness.businessId, b.id)),
+        const [[totalCustomers], [totalSpins], [returningCustomers]] =
+          await Promise.all([
+            this.drizzle.db
+              .select({ count: count() })
+              .from(schema.customerBusiness)
+              .where(eq(schema.customerBusiness.businessId, b.id)),
 
-          this.drizzle.db
-            .select({ count: count() })
-            .from(schema.spins)
-            .where(eq(schema.spins.businessId, b.id)),
+            this.drizzle.db
+              .select({ count: count() })
+              .from(schema.spins)
+              .where(eq(schema.spins.businessId, b.id)),
 
-          // Returning = customers with more than 1 spin at this business
-          this.drizzle.db
-            .select({ count: sql<number>`count(*)` })
-            .from(
-              this.drizzle.db
-                .select({ customerId: schema.spins.customerId, spinCount: count().as('spin_count') })
-                .from(schema.spins)
-                .where(eq(schema.spins.businessId, b.id))
-                .groupBy(schema.spins.customerId)
-                .as('per_customer'),
-            )
-            .where(sql`spin_count > 1`),
-        ]);
+            // Returning = customers with more than 1 spin at this business
+            this.drizzle.db
+              .select({ count: sql<number>`count(*)` })
+              .from(
+                this.drizzle.db
+                  .select({
+                    customerId: schema.spins.customerId,
+                    spinCount: count().as('spin_count'),
+                  })
+                  .from(schema.spins)
+                  .where(eq(schema.spins.businessId, b.id))
+                  .groupBy(schema.spins.customerId)
+                  .as('per_customer'),
+              )
+              .where(sql`spin_count > 1`),
+          ]);
 
         const [lastSpin] = await this.drizzle.db
           .select({ spunAt: schema.spins.spunAt })
@@ -55,7 +59,8 @@ export class AdminService {
           total_customers: total,
           total_spins: Number(totalSpins?.count ?? 0),
           returning_customers: returning,
-          return_rate_pct: total > 0 ? Math.round((returning / total) * 100) : 0,
+          return_rate_pct:
+            total > 0 ? Math.round((returning / total) * 100) : 0,
           last_active: lastSpin?.spunAt ?? null,
           created_at: b.createdAt,
         };
@@ -66,7 +71,9 @@ export class AdminService {
       if (!a.last_active && !b.last_active) return 0;
       if (!a.last_active) return 1;
       if (!b.last_active) return -1;
-      return new Date(b.last_active).getTime() - new Date(a.last_active).getTime();
+      return (
+        new Date(b.last_active).getTime() - new Date(a.last_active).getTime()
+      );
     });
   }
 
@@ -82,8 +89,14 @@ export class AdminService {
         phoneNumber: schema.customers.phoneNumber,
       })
       .from(schema.activityLogs)
-      .innerJoin(schema.businesses, eq(schema.activityLogs.businessId, schema.businesses.id))
-      .leftJoin(schema.customers, eq(schema.activityLogs.customerId, schema.customers.id))
+      .innerJoin(
+        schema.businesses,
+        eq(schema.activityLogs.businessId, schema.businesses.id),
+      )
+      .leftJoin(
+        schema.customers,
+        eq(schema.activityLogs.customerId, schema.customers.id),
+      )
       .orderBy(desc(schema.activityLogs.createdAt))
       .limit(limit);
 
@@ -135,8 +148,14 @@ export class AdminService {
       total_spins: Number(totalSpins?.count ?? 0),
       new_customers: newCount,
       returning_customers: returning > 0 ? returning : 0,
-      return_rate_pct: total > 0 ? Math.round(((returning > 0 ? returning : 0) / total) * 100) : 0,
-      daily_spins: dailySpins.map((d) => ({ date: d.date, count: Number(d.count) })),
+      return_rate_pct:
+        total > 0
+          ? Math.round(((returning > 0 ? returning : 0) / total) * 100)
+          : 0,
+      daily_spins: dailySpins.map((d) => ({
+        date: d.date,
+        count: Number(d.count),
+      })),
     };
   }
 

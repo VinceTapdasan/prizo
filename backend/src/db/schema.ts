@@ -30,7 +30,11 @@ export const rewardStatusEnum = pgEnum('reward_status', [
   'expired',
 ]);
 
-export const userRoleEnum = pgEnum('user_role', ['business_owner', 'customer', 'superadmin']);
+export const userRoleEnum = pgEnum('user_role', [
+  'business_owner',
+  'customer',
+  'superadmin',
+]);
 
 // ============================================================
 // Tables
@@ -86,7 +90,10 @@ export const customerBusiness = pgTable(
       .references(() => businesses.id, { onDelete: 'cascade' }),
     loyaltyPoints: integer('loyalty_points').notNull().default(0),
     pityCounter: integer('pity_counter').notNull().default(0),
-    lastSpinAt: timestamp('last_spin_at', { withTimezone: true, mode: 'string' }),
+    lastSpinAt: timestamp('last_spin_at', {
+      withTimezone: true,
+      mode: 'string',
+    }),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
       .notNull()
       .defaultNow(),
@@ -120,7 +127,9 @@ export const spins = pgTable('spins', {
   businessId: uuid('business_id')
     .notNull()
     .references(() => businesses.id, { onDelete: 'cascade' }),
-  rewardId: uuid('reward_id').references(() => rewards.id, { onDelete: 'set null' }),
+  rewardId: uuid('reward_id').references(() => rewards.id, {
+    onDelete: 'set null',
+  }),
   spunAt: timestamp('spun_at', { withTimezone: true, mode: 'string' })
     .notNull()
     .defaultNow(),
@@ -145,7 +154,10 @@ export const customerRewards = pgTable('customer_rewards', {
     .references(() => spins.id, { onDelete: 'cascade' }),
   status: rewardStatusEnum('status').notNull().default('unclaimed'),
   redeemedAt: timestamp('redeemed_at', { withTimezone: true, mode: 'string' }),
-  expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'string' }).notNull(),
+  expiresAt: timestamp('expires_at', {
+    withTimezone: true,
+    mode: 'string',
+  }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
     .notNull()
     .defaultNow(),
@@ -156,7 +168,9 @@ export const activityLogs = pgTable('activity_logs', {
   businessId: uuid('business_id')
     .notNull()
     .references(() => businesses.id, { onDelete: 'cascade' }),
-  customerId: uuid('customer_id').references(() => customers.id, { onDelete: 'set null' }),
+  customerId: uuid('customer_id').references(() => customers.id, {
+    onDelete: 'set null',
+  }),
   actionType: text('action_type').notNull(), // 'SPIN' | 'REDEEM'
   details: jsonb('details').notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
