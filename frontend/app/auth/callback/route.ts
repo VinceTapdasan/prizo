@@ -47,6 +47,11 @@ export async function GET(request: Request) {
         }
       }
 
+      // If Google user has no phone linked, prompt them to add one
+      if (!data.user.phone) {
+        return NextResponse.redirect(`${origin}/link-phone`);
+      }
+
       const { data: businesses } = await supabase
         .from('businesses')
         .select('id')
