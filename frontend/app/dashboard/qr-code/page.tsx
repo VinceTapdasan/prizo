@@ -57,14 +57,15 @@ export default function QrCodePage() {
 
       <div className="max-w-sm space-y-5 rounded-lg border border-border bg-card p-6 shadow-xs">
         <div className="flex items-center justify-center" ref={canvasRef}>
-          <QRCodeCanvas
-            value={qrUrl}
-            size={220}
-            bgColor="transparent"
-            fgColor="currentColor"
-            level="H"
-            className="text-foreground"
-          />
+          <div className="rounded-md bg-white p-3">
+            <QRCodeCanvas
+              value={qrUrl}
+              size={220}
+              bgColor="#ffffff"
+              fgColor="#000000"
+              level="H"
+            />
+          </div>
         </div>
 
         <div className="space-y-1">

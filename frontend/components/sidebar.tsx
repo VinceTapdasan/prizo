@@ -14,7 +14,11 @@ import {
   Sun,
   Moon,
   X,
+  LogOut,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -45,11 +49,12 @@ function NavItem({
     <Link
       href={href}
       onClick={onClose}
-      className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+      className={cn(
+        "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
         active
           ? "bg-sidebar-primary text-sidebar-primary-foreground"
-          : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-      }`}
+          : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+      )}
     >
       <Icon size={16} strokeWidth={1.5} />
       <span>{label}</span>
@@ -71,6 +76,26 @@ function ThemeToggle() {
         <span className="hidden dark:inline">Light mode</span>
         <span className="dark:hidden">Dark mode</span>
       </span>
+    </button>
+  );
+}
+
+function SignOutButton() {
+  const router = useRouter();
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+  }
+
+  return (
+    <button
+      onClick={handleSignOut}
+      className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+    >
+      <LogOut size={16} strokeWidth={1.5} />
+      <span className="text-sm">Sign out</span>
     </button>
   );
 }
@@ -125,6 +150,7 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
         ))}
 
         <ThemeToggle />
+        <SignOutButton />
 
         <div className="mt-2 flex items-center gap-3 rounded-md px-3 py-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground">

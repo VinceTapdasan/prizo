@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Menu } from "lucide-react";
 import { Sidebar } from "./sidebar";
+import { cn } from "@/lib/utils";
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -23,17 +24,19 @@ export function MobileNav() {
 
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-200 lg:hidden ${
-          open ? "opacity-100" : "pointer-events-none opacity-0"
-        }`}
+        className={cn(
+          "fixed inset-0 z-40 bg-black/50 transition-opacity duration-200 lg:hidden",
+          open ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
         onClick={() => setOpen(false)}
       />
 
       {/* Slide-out sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 transition-transform duration-200 ease-in-out lg:hidden ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 transition-transform duration-200 ease-in-out lg:hidden",
+          open ? "translate-x-0" : "-translate-x-full",
+        )}
       >
         <Sidebar onClose={() => setOpen(false)} />
       </div>
