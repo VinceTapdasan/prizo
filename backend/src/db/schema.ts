@@ -9,6 +9,7 @@ import {
   timestamp,
   time,
   unique,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 
 // ============================================================
@@ -29,7 +30,7 @@ export const rewardStatusEnum = pgEnum('reward_status', [
   'expired',
 ]);
 
-export const userRoleEnum = pgEnum('user_role', ['business_owner', 'customer']);
+export const userRoleEnum = pgEnum('user_role', ['business_owner', 'customer', 'superadmin']);
 
 // ============================================================
 // Tables
@@ -67,6 +68,7 @@ export const customers = pgTable('customers', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id'),
   phoneNumber: text('phone_number').notNull().unique(),
+  hasPassword: boolean('has_password').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
     .notNull()
     .defaultNow(),
@@ -149,6 +151,19 @@ export const customerRewards = pgTable('customer_rewards', {
     .defaultNow(),
 });
 
+export const activityLogs = pgTable('activity_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessId: uuid('business_id')
+    .notNull()
+    .references(() => businesses.id, { onDelete: 'cascade' }),
+  customerId: uuid('customer_id').references(() => customers.id, { onDelete: 'set null' }),
+  actionType: text('action_type').notNull(), // 'SPIN' | 'REDEEM'
+  details: jsonb('details').notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
+    .notNull()
+    .defaultNow(),
+});
+
 export const milestoneRewards = pgTable('milestone_rewards', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id')
@@ -178,3 +193,4 @@ export type Spin = typeof spins.$inferSelect;
 export type NewSpin = typeof spins.$inferInsert;
 export type CustomerReward = typeof customerRewards.$inferSelect;
 export type MilestoneReward = typeof milestoneRewards.$inferSelect;
+export type ActivityLog = typeof activityLogs.$inferSelect;
